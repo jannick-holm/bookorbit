@@ -627,6 +627,24 @@ function CatalogDetail:showBookActionSheet(detail, opts)
         addRow(description_button)
     end
 
+    -- Single-file audiobook stored with this ebook: fetch it next to the
+    -- ebook under the same name (see bookorbit_companion_audio.lua).
+    local audio_text
+    if include_details and self.companionAudioButtonText then
+        local ok, text = pcall(self.companionAudioButtonText, self, detail)
+        if ok then audio_text = text else require("logger").warn("BookOrbit: companion audio label failed", text) end
+    end
+    if audio_text then
+        addRow({
+            text = audio_text,
+            callback = function()
+                closeThen(function()
+                    self:downloadCompanionAudioForDetail(detail)
+                end)
+            end,
+        })
+    end
+
     if include_details then
         addRow({
             text = _("Book info"),
