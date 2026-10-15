@@ -363,7 +363,12 @@ function CatalogDownload.install(Catalog)
             math.floor(received / (256 * 1024))
     end
 
-    function Catalog:downloadFile(local_path, detail, file)
+    -- opts (optional), used for companion audiobook downloads:
+    --   on_success(path)  replaces linking and the "Open now?" dialog
+    --   on_cancel()       called when the user cancels
+    --   on_failure(err)   replaces the retry dialog
+    function Catalog:downloadFile(local_path, detail, file, opts)
+        opts = opts or {}
         local filename = local_path:match("[^/]+$") or safeFilenameBase(detail)
         local total = file.sizeBytes
         local root = self:getCurrentDownloadDir()
@@ -432,10 +437,22 @@ function CatalogDownload.install(Catalog)
             }
             closeDialog()
             if not ok then
-                if err == "cancelled" then return end
+                if err == "cancelled" then
+                    if opts.on_cancel then opts.on_cancel() end
+                    return
+                end
+                if opts.on_failure then
+                    opts.on_failure(err)
+                    return
+                end
                 self:showRetry(err, function()
-                    self:downloadFile(local_path, detail, file)
+                    self:downloadFile(local_path, detail, file, opts)
                 end)
+                return
+            end
+
+            if opts.on_success then
+                opts.on_success(local_path)
                 return
             end
 
@@ -456,7 +473,13 @@ function CatalogDownload.install(Catalog)
                     self:updateItems()
                 end
             end
-            self:showDownloadedDialog(local_path, linked)
+            if self.offerCompanionAudio then
+                self:offerCompanionAudio(local_path, detail, file, function()
+                    self:showDownloadedDialog(local_path, linked)
+                end)
+            else
+                self:showDownloadedDialog(local_path, linked)
+            end
         end)
     end
 

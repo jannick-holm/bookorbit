@@ -440,48 +440,63 @@ function CatalogBulkDownload.install(Catalog)
         local dialog
         local preset = self:bulkFormatPreset()
         local policy = self:bulkExistingPolicy()
-        dialog = ButtonDialog:new{
-            title = _("Download settings"),
-            buttons = {
+        local buttons = {
+            {
                 {
-                    {
-                        text = _("Read-aloud EPUB delivery"),
-                        callback = function()
-                            UIManager:close(dialog)
-                            self:showDeliveryPreferenceDialog()
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = T(_("Folder: %1"), BD.dirpath(shortPath(self:getCurrentDownloadDir(), FOLDER_LABEL_LENGTH))),
-                        callback = function()
-                            UIManager:close(dialog)
-                            self:chooseDownloadDir(function()
-                                self:showBulkDownloadSettings()
-                            end)
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = T(_("Format: %1"), preset.label),
-                        callback = function()
-                            UIManager:close(dialog)
-                            self:showBulkFormatPresetDialog()
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = T(_("Existing files: %1"), policy.label),
-                        callback = function()
-                            UIManager:close(dialog)
-                            self:showBulkExistingPolicyDialog()
-                        end,
-                    },
+                    text = _("Read-aloud EPUB delivery"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showDeliveryPreferenceDialog()
+                    end,
                 },
             },
+            {
+                {
+                    text = T(_("Folder: %1"), BD.dirpath(shortPath(self:getCurrentDownloadDir(), FOLDER_LABEL_LENGTH))),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:chooseDownloadDir(function()
+                            self:showBulkDownloadSettings()
+                        end)
+                    end,
+                },
+            },
+            {
+                {
+                    text = T(_("Format: %1"), preset.label),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showBulkFormatPresetDialog()
+                    end,
+                },
+            },
+            {
+                {
+                    text = T(_("Existing files: %1"), policy.label),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showBulkExistingPolicyDialog()
+                    end,
+                },
+            },
+        }
+        -- Companion audiobook downloads (bookorbit_companion_audio.lua).
+        if self.companionAudioMode then
+            table.insert(buttons, {
+                {
+                    text = T(_("Audiobook with ebook: %1"), self:companionAudioMode().label),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showCompanionAudioModeDialog(function()
+                            self:showBulkDownloadSettings()
+                        end)
+                    end,
+                },
+            })
+        end
+        dialog = ButtonDialog:new{
+            title = _("Download settings"),
+            buttons = buttons,
         }
         UIManager:show(dialog)
     end

@@ -46,6 +46,7 @@ local BookOrbitStateManager = require("bookorbit_state_manager")
 local CatalogUtil = require("bookorbit_catalog_util")
 local CatalogWidgets = require("bookorbit_catalog_widgets")
 local CatalogDownload = require("bookorbit_catalog_download")
+local CompanionAudio = require("bookorbit_companion_audio")
 local CatalogBulkDownload = require("bookorbit_catalog_bulk_download")
 local CatalogDashboard = require("bookorbit_catalog_dashboard")
 local CatalogDetail = require("bookorbit_catalog_detail")
@@ -241,6 +242,7 @@ local BookOrbitCatalog = Menu:extend{
 }
 
 CatalogDownload.install(BookOrbitCatalog)
+CompanionAudio.install(BookOrbitCatalog)
 CatalogBulkDownload.install(BookOrbitCatalog)
 CatalogDashboard.install(BookOrbitCatalog)
 CatalogDetail.install(BookOrbitCatalog)
