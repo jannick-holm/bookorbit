@@ -271,4 +271,36 @@ assertEqual(Catalog.download_generation > generation_before, true, "cancelling a
 assertEqual(transfer_opts.is_current(), false, "a late child result is refused after cancellation")
 assertEqual(shown_widget.text, "Download cancelled.", "the dismissed dialog is not resurrected by late progress")
 
+-- Companion audiobook hooks: opts.on_success replaces linking and the
+-- "Open now?" dialog; a normal ebook download offers the companion first.
+package.loaded["bookorbit_download_transfer"].run = function() return true end
+local linked_paths = {}
+Catalog.linkDownloadedFile = function(_, path) table.insert(linked_paths, path); return true end
+Catalog.refreshOnDevice = function() end
+local success_path
+Catalog:downloadFile("/mnt/onboard/library/Dune.m4b", detail, { id = 11, format = "m4b", sizeBytes = 100 }, {
+    on_success = function(path) success_path = path end,
+})
+assertEqual(success_path, "/mnt/onboard/library/Dune.m4b", "on_success receives the saved path")
+assertEqual(#linked_paths, 0, "companion audio is not linked for sync")
+
+local offered, opened_dialog
+Catalog.offerCompanionAudio = function(_, path, _, file, on_done)
+    offered = { path = path, file = file }
+    on_done()
+end
+Catalog.showDownloadedDialog = function(_, path) opened_dialog = path end
+Catalog:downloadFile("/mnt/onboard/library/Dune.epub", detail, { id = 10, format = "epub", sizeBytes = 100 })
+assertEqual(offered.path, "/mnt/onboard/library/Dune.epub", "an ebook download offers its companion audiobook")
+assertEqual(opened_dialog, "/mnt/onboard/library/Dune.epub", "the open dialog follows the companion step")
+
+local failure_err
+Catalog.showRetry = function() error("on_failure replaces the retry dialog") end
+package.loaded["bookorbit_download_transfer"].run = function() return nil, "network_error" end
+Catalog:downloadFile("/mnt/onboard/library/Dune.m4b", detail, { id = 11, format = "m4b" }, {
+    on_success = function() error("must not succeed") end,
+    on_failure = function(err) failure_err = err end,
+})
+assertEqual(failure_err, "network_error", "on_failure receives the transfer error")
+
 print("bookorbit_catalog_download_test.lua: ok")
